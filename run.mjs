@@ -49,4 +49,6 @@ globalThis.fetch = async (input, init) => {
   return res
 }
 
-await import("/app/zen-proxy/zen-proxy.mjs")
+// zen-proxy only starts its server when loaded as the main module.
+process.argv[1] = "/app/zen-proxy/zen-proxy.mjs"
+await import(process.argv[1])
