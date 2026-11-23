@@ -18,6 +18,7 @@ RUN mkdir -p /app/zen-proxy \
  && rm /tmp/zen.tar.gz
 
 COPY entrypoint.sh /entrypoint.sh
+COPY run.mjs /app/run.mjs
 RUN chmod +x /entrypoint.sh
 
 ENV HOST=0.0.0.0 \

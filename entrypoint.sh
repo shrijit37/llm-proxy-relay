@@ -25,4 +25,4 @@ if [ "$ready" -ne 1 ]; then
 fi
 
 echo "egress proxy ready on 127.0.0.1:42987"
-exec bun /app/zen-proxy/zen-proxy.mjs
+exec bun /app/run.mjs
