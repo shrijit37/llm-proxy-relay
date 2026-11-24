@@ -20,15 +20,7 @@ RUN mkdir -p /app/zen-proxy \
 # Alias names are client-facing ids: expose them in /v1/models via ALLOWED(),
 # NOT via fallbackModels (which is the retry chain — an alias key there would
 # be sent upstream as a real, paid model on every fallback).
-RUN bun -e '
-const fs = require("node:fs");
-const p = "/app/zen-proxy/zen-proxy.mjs";
-let s = fs.readFileSync(p, "utf8");
-const old = "const ALLOWED = () => new Set([...config.fallbackModels, ...Object.values(config.modelAliases)])";
-if (!s.includes(old)) throw new Error("ALLOWED pattern not found — zen-proxy source changed");
-const next = "const ALLOWED = () => new Set([...config.fallbackModels, ...Object.values(config.modelAliases), ...Object.keys(config.modelAliases)])";
-fs.writeFileSync(p, s.replace(old, next));
-'
+RUN bun -e 'const fs=require("node:fs");const p="/app/zen-proxy/zen-proxy.mjs";let s=fs.readFileSync(p,"utf8");const old="const ALLOWED = () => new Set([...config.fallbackModels, ...Object.values(config.modelAliases)])";if(!s.includes(old))throw new Error("ALLOWED pattern not found - zen-proxy source changed");const next="const ALLOWED = () => new Set([...config.fallbackModels, ...Object.values(config.modelAliases), ...Object.keys(config.modelAliases)])";fs.writeFileSync(p,s.replace(old,next));'
 
 COPY entrypoint.sh /entrypoint.sh
 COPY run.mjs /app/run.mjs
