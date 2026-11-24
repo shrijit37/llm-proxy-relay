@@ -18,7 +18,16 @@ try {
   cfg = JSON.parse(readFileSync(CONFIG_PATH, "utf8"))
 } catch {}
 cfg.modelAliases = { ...(cfg.modelAliases || {}), "gpt-6-astra": "hy4-flash-free" }
-const fallback = Array.isArray(cfg.fallbackModels) ? [...cfg.fallbackModels] : []
+// A fresh container has no config file: seed from the shipped catalog rather
+// than an empty list, otherwise auto-sync would rebuild the catalog from its
+// own probes and silently drop models that happened to be flaky that round.
+let fallback = Array.isArray(cfg.fallbackModels) && cfg.fallbackModels.length ? [...cfg.fallbackModels] : []
+if (!fallback.length) {
+  try {
+    const shipped = JSON.parse(readFileSync("/app/zen-proxy/models.json", "utf8"))
+    if (Array.isArray(shipped.models)) fallback = [...shipped.models]
+  } catch {}
+}
 if (!fallback.includes("gpt-6-astra")) fallback.push("gpt-6-astra")
 cfg.fallbackModels = fallback
 writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2))
