@@ -1,11 +1,27 @@
 // Thin wrapper around zen-proxy: routes its upstream LLM fetches through the
 // in-container CONNECT egress proxy and rotates that egress on free-tier 429s.
 // This replaces the OpenCode-plugin rotation hook without touching OpenCode.
-import { readFileSync } from "node:fs"
+import { readFileSync, writeFileSync } from "node:fs"
 
 const CONTROL = process.env.UNLIMITEDCODE_CONTROL || "http://127.0.0.1:42988"
 const LISTEN = (process.env.UNLIMITEDCODE_LISTEN || "http://127.0.0.1:42987").replace(/^https?:\/\//, "")
 const TOKEN = readFileSync(`${process.env.UNLIMITEDCODE_HOME}/control.token`, "utf8").trim()
+
+// Source-supported way to expose an alias in /v1/models: ALLOWED() is built
+// from fallbackModels + alias *values*, so an alias key must also be listed in
+// fallbackModels. Merge on every start so a dashboard edit or a fresh container
+// cannot silently drop it. resolveModel() still checks aliases first, so the
+// upstream model actually served is unchanged.
+const CONFIG_PATH = process.env.ZEN_PROXY_CONFIG || "/app/zen-proxy/zen-proxy.json"
+let cfg = {}
+try {
+  cfg = JSON.parse(readFileSync(CONFIG_PATH, "utf8"))
+} catch {}
+cfg.modelAliases = { ...(cfg.modelAliases || {}), "gpt-6-astra": "hy4-flash-free" }
+const fallback = Array.isArray(cfg.fallbackModels) ? [...cfg.fallbackModels] : []
+if (!fallback.includes("gpt-6-astra")) fallback.push("gpt-6-astra")
+cfg.fallbackModels = fallback
+writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2))
 
 const realFetch = globalThis.fetch
 let epoch = 0
